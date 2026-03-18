@@ -23,12 +23,15 @@ export default async function DashboardPage() {
           <div className="dashboard-grid">
             <Link href="/disponibilidade" className="action-card">
               <h3>Minha Disponibilidade</h3>
-              <p>Marcar dias e horários para servir</p>
+              <p>Marque os dias em que você pode servir na paróquia</p>
             </Link>
-
+            <Link href="/minhas-escalas" className="action-card" style={{ borderColor: 'var(--secondary)' }}>
+              <h3>Minhas Escalas</h3>
+              <p>Consulte apenas os dias em que você está escalado</p>
+            </Link>
             <Link href="/escala" className="action-card">
               <h3>Escala Mensal</h3>
-              <p>Visualizar a escala definitiva do mês</p>
+              <p>Visualize a escala completa de todos os membros</p>
             </Link>
 
             {user.role === 'ADMIN' && (
@@ -37,9 +40,13 @@ export default async function DashboardPage() {
                   <h3>Gerenciar Escalas</h3>
                   <p>Gerar missas, automatizar escalas e verificar faltas</p>
                 </Link>
+                <Link href="/admin/missas-especiais" className="action-card" style={{ borderColor: '#6366f1' }}>
+                  <h3>Missas Solenes</h3>
+                  <p>Agendar missas esporádicas e eventos especiais</p>
+                </Link>
                 <Link href="/admin/integrantes" className="action-card" style={{ borderColor: 'var(--success)' }}>
-                  <h3>Gerenciar Integrantes</h3>
-                  <p>Adicionar, editar e remover voluntários</p>
+                  <h3>Gerenciar Membros</h3>
+                  <p>Adicionar, editar e remover membros</p>
                 </Link>
               </>
             )}

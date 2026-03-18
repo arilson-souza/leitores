@@ -25,7 +25,11 @@ export default function IntegrantesPage() {
     avatar_url: '',
     role: 'VOLUNTARIO',
     can_be_reader: true,
-    can_be_animator: true
+    can_be_animator: true,
+    status: 'ATIVO',
+    leave_start: '',
+    leave_end: '',
+    leave_reason: ''
   });
 
   useEffect(() => {
@@ -46,7 +50,7 @@ export default function IntegrantesPage() {
         setUser(userData.user);
       }
 
-      const listRes = await fetch('/api/admin/users');
+      const listRes = await fetch(`/api/admin/users?t=${Date.now()}`);
       if (listRes.ok) {
         const data = await listRes.json();
         setUsersList(data.users);
@@ -57,6 +61,18 @@ export default function IntegrantesPage() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsersSilent = async () => {
+    try {
+      const listRes = await fetch(`/api/admin/users?t=${Date.now()}`);
+      if (listRes.ok) {
+        const data = await listRes.json();
+        setUsersList(data.users);
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -93,7 +109,11 @@ export default function IntegrantesPage() {
       avatar_url: '',
       role: 'VOLUNTARIO',
       can_be_reader: true,
-      can_be_animator: true
+      can_be_animator: true,
+      status: 'ATIVO',
+      leave_start: '',
+      leave_end: '',
+      leave_reason: ''
     });
     setShowForm(true);
     setMessage('');
@@ -110,7 +130,11 @@ export default function IntegrantesPage() {
       avatar_url: u.avatar_url || '',
       role: u.role,
       can_be_reader: Boolean(u.can_be_reader),
-      can_be_animator: Boolean(u.can_be_animator)
+      can_be_animator: Boolean(u.can_be_animator),
+      status: u.status || 'ATIVO',
+      leave_start: u.leave_start || '',
+      leave_end: u.leave_end || '',
+      leave_reason: u.leave_reason || ''
     });
     setShowForm(true);
     setMessage('');
@@ -127,6 +151,8 @@ export default function IntegrantesPage() {
       const url = isEditing ? `/api/admin/users/${formData.id}` : '/api/admin/users';
       const method = isEditing ? 'PUT' : 'POST';
 
+      console.log('Sending payload:', formData);
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -138,15 +164,16 @@ export default function IntegrantesPage() {
 
       setMessage(data.message);
       setShowForm(false);
-      fetchData();
+      fetchUsersSilent();
     } catch (err) {
       setError(err.message);
+    } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Tem certeza que deseja remover o integrante "${name}"? Todas as escalas dele serão atualizadas.`)) {
+    if (!window.confirm(`Tem certeza que deseja remover o membro "${name}"? Todas as escalas dele serão atualizadas.`)) {
       return;
     }
 
@@ -158,9 +185,35 @@ export default function IntegrantesPage() {
       if (!res.ok) throw new Error(data.error);
 
       setMessage(data.message);
-      fetchData();
+      fetchUsersSilent();
     } catch (err) {
       setError(err.message);
+    }
+  };
+
+  const handleQuickStatus = async (u, newStatus) => {
+    if (newStatus === 'LICENCIADO') {
+      openEditForm(u);
+      setTimeout(() => setFormData(prev => ({ ...prev, status: 'LICENCIADO' })), 0);
+    } else {
+      if (!window.confirm(`Deseja retornar o membro "${u.name}" para o status ATIVO?`)) return;
+      setError('');
+      setMessage('');
+      try {
+        const payload = { ...u, status: 'ATIVO', leave_start: '', leave_end: '', leave_reason: '' };
+        // Clean up role to uppercase if it came lowercase, though it should be correct
+        const res = await fetch(`/api/admin/users/${u.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        setMessage(`Status de ${u.name} alterado para ATIVO.`);
+        fetchUsersSilent();
+      } catch (err) {
+        setError(err.message);
+      }
     }
   };
 
@@ -170,18 +223,36 @@ export default function IntegrantesPage() {
       <main className="main-content">
         <div className="card large" style={{ maxWidth: '1000px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-            <h2 className="card-title" style={{ margin: 0 }}>Gerenciar Integrantes</h2>
+            <h2 className="card-title" style={{ margin: 0 }}>Gerenciar Membros</h2>
             <button onClick={openAddForm} className="btn" style={{ width: 'auto' }}>
-              + Adicionar Integrante
+              + Adicionar Membro
             </button>
           </div>
+
+          {/* DASHBOARD SUMÁRIO */}
+          {usersList && usersList.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{ padding: '1rem', border: '1px solid var(--border)', borderRadius: '8px', backgroundColor: '#f8fafc', textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--primary)' }}>{usersList.length}</div>
+                <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Membros Totais</div>
+              </div>
+              <div style={{ padding: '1rem', border: '1px solid #bbf7d0', borderRadius: '8px', backgroundColor: '#f0fdf4', textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#166534' }}>{usersList.filter(u => u.status === 'ATIVO' || !u.status).length}</div>
+                <div style={{ fontSize: '0.9rem', color: '#166534' }}>Ativos</div>
+              </div>
+              <div style={{ padding: '1rem', border: '1px solid #fef08a', borderRadius: '8px', backgroundColor: '#fefce8', textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#854d0e' }}>{usersList.filter(u => u.status === 'LICENCIADO').length}</div>
+                <div style={{ fontSize: '0.9rem', color: '#854d0e' }}>Licenciados</div>
+              </div>
+            </div>
+          )}
 
           <Alert type="error" message={error} />
           <Alert type="success" message={message} />
 
           {showForm && (
             <div style={{ padding: '1.5rem', border: '1px solid var(--border)', borderRadius: '8px', marginBottom: '2rem', backgroundColor: '#f9fafb' }}>
-              <h3 style={{ marginBottom: '1rem', color: 'var(--primary)' }}>{isEditing ? 'Editar Integrante' : 'Novo Integrante'}</h3>
+              <h3 style={{ marginBottom: '1rem', color: 'var(--primary)' }}>{isEditing ? 'Editar Membro' : 'Novo Membro'}</h3>
               <form onSubmit={handleSubmit}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
                   <div className="form-group">
@@ -199,10 +270,35 @@ export default function IntegrantesPage() {
                   <div className="form-group">
                     <label className="form-label">Nível de Acesso</label>
                     <select name="role" className="form-input" value={formData.role} onChange={handleInputChange}>
-                      <option value="VOLUNTARIO">Voluntário</option>
-                      <option value="ADMIN">Administrador</option>
+                      <option value="VOLUNTARIO">Membro</option>
+                      <option value="ADMIN">Coordenador</option>
                     </select>
                   </div>
+                  <div className="form-group">
+                    <label className="form-label">Status do Membro</label>
+                    <select name="status" className="form-input" value={formData.status} onChange={handleInputChange}>
+                      <option value="ATIVO">Ativo</option>
+                      <option value="LICENCIADO">Em Licença</option>
+                    </select>
+                  </div>
+                  
+                  {formData.status === 'LICENCIADO' && (
+                    <>
+                      <div className="form-group">
+                        <label className="form-label">Início da Licença</label>
+                        <input type="date" name="leave_start" className="form-input" value={formData.leave_start} onChange={handleInputChange} required />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Fim da Licença (Opcional)</label>
+                        <input type="date" name="leave_end" className="form-input" value={formData.leave_end} onChange={handleInputChange} />
+                      </div>
+                      <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                        <label className="form-label">Motivo da Licença</label>
+                        <input type="text" name="leave_reason" className="form-input" value={formData.leave_reason} onChange={handleInputChange} placeholder="Ex: Viagem, Saúde, Motivos pessoais..." required />
+                      </div>
+                    </>
+                  )}
+
                   <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                     <label className="form-label">Foto de Perfil (Opcional - Máx 2MB)</label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -252,6 +348,7 @@ export default function IntegrantesPage() {
                     <th style={{ padding: '0.75rem' }}>Nome</th>
                     <th style={{ padding: '0.75rem' }}>E-mail</th>
                     <th style={{ padding: '0.75rem' }}>Funções</th>
+                    <th style={{ padding: '0.75rem' }}>Status</th>
                     <th style={{ padding: '0.75rem' }}>Acesso</th>
                     <th style={{ padding: '0.75rem', textAlign: 'center' }}>Ações</th>
                   </tr>
@@ -263,7 +360,11 @@ export default function IntegrantesPage() {
                     if (u.can_be_animator) funcs.push('Animador');
 
                     return (
-                      <tr key={u.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <tr key={u.id} style={{ 
+                        borderBottom: '1px solid var(--border)',
+                        backgroundColor: u.status === 'LICENCIADO' ? '#fff7ed' : 'transparent',
+                        borderLeft: u.status === 'LICENCIADO' ? '4px solid #ea580c' : 'none'
+                      }}>
                         <td style={{ padding: '0.75rem', fontWeight: 500 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             {u.avatar_url ? (
@@ -278,9 +379,34 @@ export default function IntegrantesPage() {
                         </td>
                         <td style={{ padding: '0.75rem' }}>{u.email}</td>
                         <td style={{ padding: '0.75rem' }}>
-                          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block' }}>
                             {funcs.join(', ') || 'Nenhuma'}
                           </span>
+                        </td>
+                        <td style={{ padding: '0.75rem' }}>
+                          <select 
+                            value={u.status || 'ATIVO'} 
+                            onChange={(e) => handleQuickStatus(u, e.target.value)}
+                            style={{ 
+                              padding: '0.3rem', 
+                              borderRadius: '4px', 
+                              border: '1px solid var(--border)', 
+                              backgroundColor: u.status === 'LICENCIADO' ? '#fefce8' : '#f0fdf4',
+                              color: u.status === 'LICENCIADO' ? '#854d0e' : '#166534',
+                              fontWeight: 'bold',
+                              fontSize: '0.85rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <option value="ATIVO">ATIVO</option>
+                            <option value="LICENCIADO">LICENCIADO</option>
+                          </select>
+                          {u.status === 'LICENCIADO' && (
+                            <span style={{ fontSize: '0.8rem', color: '#c2410c', display: 'block', marginTop: '6px' }}>
+                              De: <b>{u.leave_start ? u.leave_start.split('-').reverse().join('/') : '-'}</b><br/>
+                              Até: <b>{u.leave_end ? u.leave_end.split('-').reverse().join('/') : 'Indeterminado'}</b>
+                            </span>
+                          )}
                         </td>
                         <td style={{ padding: '0.75rem' }}>
                           <span style={{ 
@@ -288,7 +414,7 @@ export default function IntegrantesPage() {
                             backgroundColor: u.role === 'ADMIN' ? '#dbeafe' : '#f3f4f6',
                             color: u.role === 'ADMIN' ? '#1e40af' : '#4b5563'
                           }}>
-                            {u.role === 'ADMIN' ? 'Admin' : 'Voluntário'}
+                            {u.role === 'ADMIN' ? 'Coordenador' : 'Membro'}
                           </span>
                         </td>
                         <td style={{ padding: '0.75rem', textAlign: 'center' }}>
@@ -318,8 +444,8 @@ export default function IntegrantesPage() {
                   })}
                   {usersList.length === 0 && (
                     <tr>
-                      <td colSpan="5" style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                        Nenhum integrante cadastrado além do administrador.
+                      <td colSpan="6" style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                        Nenhum membro cadastrado além do coordenador.
                       </td>
                     </tr>
                   )}

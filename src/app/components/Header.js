@@ -30,7 +30,7 @@ export default function Header({ user }) {
             </Link>
             {user.role === 'ADMIN' && (
               <Link href="/admin" className={pathname.startsWith('/admin') ? 'active' : ''}>
-                Administração
+                Coordenação
               </Link>
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto', paddingLeft: '20px' }}>

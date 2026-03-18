@@ -2,13 +2,15 @@ import { getDb } from '@/lib/db';
 import { getSession, hashPassword } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request) {
   const session = await getSession();
   if (!session || session.role !== 'ADMIN') return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
 
   const db = getDb();
   try {
-    const users = db.prepare('SELECT id, name, email, avatar_url, role, can_be_reader, can_be_animator, created_at FROM users ORDER BY name ASC').all();
+    const users = db.prepare('SELECT id, name, email, avatar_url, role, can_be_reader, can_be_animator, status, leave_start, leave_end, leave_reason, created_at FROM users ORDER BY name ASC').all();
     return NextResponse.json({ users });
   } catch (error) {
     console.error('Error fetching users:', error);
@@ -21,7 +23,7 @@ export async function POST(request) {
   if (!session || session.role !== 'ADMIN') return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
 
   try {
-    const { name, email, password, role, can_be_reader, can_be_animator, avatar_url } = await request.json();
+    const { name, email, password, role, can_be_reader, can_be_animator, avatar_url, status, leave_start, leave_end, leave_reason } = await request.json();
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: 'Nome, email e senha são obrigatórios' }, { status: 400 });
@@ -41,10 +43,15 @@ export async function POST(request) {
     const isAnimator = can_be_animator ? 1 : 0;
     const avatar = avatar_url || null;
 
+    const uStatus = status === 'LICENCIADO' ? 'LICENCIADO' : 'ATIVO';
+    const lStart = uStatus === 'LICENCIADO' && leave_start ? leave_start : null;
+    const lEnd = uStatus === 'LICENCIADO' && leave_end ? leave_end : null;
+    const lReason = uStatus === 'LICENCIADO' && leave_reason ? leave_reason : null;
+
     const result = db.prepare(`
-      INSERT INTO users (name, email, password_hash, avatar_url, role, can_be_reader, can_be_animator)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(name, email, hashed, avatar, userRole, isReader, isAnimator);
+      INSERT INTO users (name, email, password_hash, avatar_url, role, can_be_reader, can_be_animator, status, leave_start, leave_end, leave_reason)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(name, email, hashed, avatar, userRole, isReader, isAnimator, uStatus, lStart, lEnd, lReason);
 
     return NextResponse.json({ success: true, message: 'Usuário adicionado com sucesso', userId: result.lastInsertRowid });
   } catch (error) {

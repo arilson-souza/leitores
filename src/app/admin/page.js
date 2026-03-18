@@ -12,6 +12,7 @@ export default function AdminPage() {
   
   const [masses, setMasses] = useState([]);
   const [schedules, setSchedules] = useState([]);
+  const [monthStatus, setMonthStatus] = useState('OPEN');
   
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -43,10 +44,11 @@ export default function AdminPage() {
         setUser(userData.user);
       }
 
-      // Fetch masses and schedules
-      const [massRes, schedRes] = await Promise.all([
+      // Fetch masses, schedules, and month status
+      const [massRes, schedRes, statusRes] = await Promise.all([
         fetch(`/api/admin/masses?year=${year}&month=${month}`),
-        fetch(`/api/schedules?year=${year}&month=${month}`)
+        fetch(`/api/schedules?year=${year}&month=${month}`),
+        fetch(`/api/admin/schedule-months?year=${year}&month=${month}`)
       ]);
 
       if (massRes.ok) {
@@ -56,6 +58,10 @@ export default function AdminPage() {
       if (schedRes.ok) {
         const data = await schedRes.json();
         setSchedules(data.schedules);
+      }
+      if (statusRes.ok) {
+        const data = await statusRes.json();
+        setMonthStatus(data.status);
       }
     } catch (err) {
       setError('Erro ao carregar dados');
@@ -110,6 +116,28 @@ export default function AdminPage() {
     }
   };
 
+  const handleStatusChange = async (e) => {
+    const newStatus = e.target.value;
+    setActionLoading(true);
+    setError('');
+    setMessage('');
+    try {
+      const res = await fetch('/api/admin/schedule-months', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ year: String(year), month: String(month), status: newStatus })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setMessage(data.message);
+      setMonthStatus(newStatus);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
   return (
@@ -117,7 +145,7 @@ export default function AdminPage() {
       {user && <Header user={user} />}
       <main className="main-content">
         <div className="card large" style={{ maxWidth: '1200px' }}>
-          <h2 className="card-title">Administração de Escalas</h2>
+          <h2 className="card-title">Coordenação de Escalas</h2>
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -126,7 +154,22 @@ export default function AdminPage() {
               <button onClick={nextMonth} className="btn btn-secondary" style={{ width: 'auto' }}>Próximo &rarr;</button>
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem' }}>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', marginRight: '1rem' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Status da Escala</span>
+                <select 
+                  value={monthStatus} 
+                  onChange={handleStatusChange} 
+                  className="form-input" 
+                  style={{ padding: '0.4rem', border: '1px solid var(--primary)', color: 'var(--primary)', fontWeight: 'bold' }}
+                  disabled={actionLoading}
+                >
+                  <option value="OPEN">Em Preenchimento</option>
+                  <option value="DRAFT">Provisória</option>
+                  <option value="PUBLISHED">Definitiva</option>
+                </select>
+              </div>
+
               <button 
                 onClick={handleGenerateMasses} 
                 className="btn btn-secondary" 
@@ -166,7 +209,7 @@ export default function AdminPage() {
                       <tr style={{ backgroundColor: 'var(--bg-color)', borderBottom: '2px solid var(--border)' }}>
                         <th style={{ padding: '0.75rem' }}>Data e Hora</th>
                         <th style={{ padding: '0.75rem' }}>Leitor 1</th>
-                        <th style={{ padding: '0.75rem' }}>Leitor 2</th>
+                        <th style={{ padding: '0.75rem' }}>Leitor(es) Extra(s)</th>
                         <th style={{ padding: '0.75rem' }}>Animador</th>
                         <th style={{ padding: '0.75rem' }}>Status</th>
                       </tr>
@@ -183,7 +226,12 @@ export default function AdminPage() {
                           <tr key={schedule.id} style={{ borderBottom: '1px solid var(--border)', backgroundColor: isIncomplete ? 'var(--error-bg)' : 'white' }}>
                             <td style={{ padding: '0.75rem', fontWeight: 500 }}>{displayDate}</td>
                             <td style={{ padding: '0.75rem' }}>{schedule.reader_1_name || <span style={{ color: 'var(--error)' }}>Faltando</span>}</td>
-                            <td style={{ padding: '0.75rem' }}>{isWeekend ? (schedule.reader_2_name || <span style={{ color: 'var(--error)' }}>Faltando</span>) : '-'}</td>
+                            <td style={{ padding: '0.75rem' }}>
+                              {!isWeekend && !schedule.reader_2_name ? '-' : 
+                                [schedule.reader_2_name, schedule.reader_3_name, schedule.reader_4_name]
+                                  .filter(Boolean).join(', ') || <span style={{ color: 'var(--error)' }}>Faltando</span>
+                              }
+                            </td>
                             <td style={{ padding: '0.75rem' }}>{schedule.animator_name || <span style={{ color: 'var(--error)' }}>Faltando</span>}</td>
                             <td style={{ padding: '0.75rem' }}>
                               <span style={{ 

@@ -56,7 +56,7 @@ export function generateSchedules(year, month) {
   const db = getDb();
   const prefix = `${year}-${String(month).padStart(2, '0')}`;
 
-  const masses = db.prepare(`SELECT id, mass_date, mass_time, day_type FROM masses WHERE mass_date LIKE ? ORDER BY mass_date, mass_time`).all(`${prefix}%`);
+  const masses = db.prepare(`SELECT id, mass_date, mass_time, day_type, required_readers FROM masses WHERE mass_date LIKE ? ORDER BY mass_date, mass_time`).all(`${prefix}%`);
   if (masses.length === 0) throw new Error('Nenhuma missa gerada para este mês.');
 
   const availabilities = db.prepare(`SELECT user_id, mass_date, mass_time FROM availabilities WHERE mass_date LIKE ?`).all(`${prefix}%`);
@@ -69,14 +69,14 @@ export function generateSchedules(year, month) {
     availMap[key].push(a.user_id);
   });
 
-  // Fetch all users to know who can be reader/animator
-  const users = db.prepare(`SELECT id, can_be_reader, can_be_animator FROM users`).all();
+  // Fetch all users to know who can be reader/animator, and their leave status
+  const users = db.prepare(`SELECT id, can_be_reader, can_be_animator, status, leave_start, leave_end FROM users`).all();
   const userMap = {};
   users.forEach(u => userMap[u.id] = u);
 
   const insertSchedule = db.prepare(`
-    INSERT INTO schedules (mass_id, reader_1_id, reader_2_id, animator_id, status)
-    VALUES (?, ?, ?, ?, 'PLANNED')
+    INSERT INTO schedules (mass_id, reader_1_id, reader_2_id, reader_3_id, reader_4_id, animator_id, status)
+    VALUES (?, ?, ?, ?, ?, ?, 'PLANNED')
   `);
 
   // Clear existing schedules for this month to regenerate
@@ -108,18 +108,31 @@ export function generateSchedules(year, month) {
       const key = `${mass.mass_date} ${mass.mass_time}`;
       const availableUsers = availMap[key] || [];
 
-      // Filter users who shouldn't serve (served previous day or previous time)
-      const eligibleUsers = availableUsers.filter(uid => 
-        !scheduledPreviousTime.has(uid) && !scheduledPreviousDay.has(uid)
-      );
+      // Filter users who shouldn't serve (served previous day or previous time, or on leave)
+      const eligibleUsers = availableUsers.filter(uid => {
+        const u = userMap[uid];
+        if (!u) return false;
+        
+        if (u.status === 'LICENCIADO') {
+          if (!u.leave_start) return false; // Indefinite leave
+          const massDateObj = new Date(mass.mass_date);
+          const startObj = new Date(u.leave_start);
+          const endObj = u.leave_end ? new Date(u.leave_end) : new Date('2099-12-31');
+          if (massDateObj >= startObj && massDateObj <= endObj) {
+            return false; // Skip, is on leave
+          }
+        }
+        
+        return !scheduledPreviousTime.has(uid) && !scheduledPreviousDay.has(uid);
+      });
 
       // Sort eligible users by usage count (ascending) to balance
       eligibleUsers.sort((a, b) => usageCount[a] - usageCount[b]);
 
-      let readersNeeded = (mass.day_type === 'WEEKDAY') ? 1 : 2;
+      let readersNeeded = mass.required_readers || ((mass.day_type === 'WEEKDAY') ? 1 : 2);
       let animatorsNeeded = 1;
 
-      let r1 = null, r2 = null, anim = null;
+      let r1 = null, r2 = null, r3 = null, r4 = null, anim = null;
       let currentlyScheduled = new Set();
 
       // Find Animators first (usually fewer animators than readers)
@@ -137,34 +150,32 @@ export function generateSchedules(year, month) {
       for (const uid of eligibleUsers) {
         if (currentlyScheduled.has(uid)) continue;
         if (userMap[uid].can_be_reader) {
-          if (readersNeeded === 2 && !r1) {
+          if (!r1) {
             r1 = uid;
-            readersNeeded--;
-            currentlyScheduled.add(uid);
-            usageCount[uid]++;
-          } else if (readersNeeded === 2 && r1 && !r2) {
+          } else if (!r2) {
             r2 = uid;
-            readersNeeded--;
-            currentlyScheduled.add(uid);
-            usageCount[uid]++;
-          } else if (readersNeeded === 1 && !r1) {
-            r1 = uid;
-            readersNeeded--;
-            currentlyScheduled.add(uid);
-            usageCount[uid]++;
+          } else if (!r3) {
+            r3 = uid;
+          } else if (!r4) {
+            r4 = uid;
           }
+          readersNeeded--;
+          currentlyScheduled.add(uid);
+          usageCount[uid]++;
         }
-        if (readersNeeded === 0) break;
+        if (readersNeeded <= 0) break;
       }
 
       // Record schedule
-      insertSchedule.run(mass.id, r1, r2, anim);
+      insertSchedule.run(mass.id, r1, r2, r3, r4, anim);
       generatedCount++;
 
       // Update previous time sets
       scheduledPreviousTime.clear();
       if (r1) scheduledPreviousTime.add(r1);
       if (r2) scheduledPreviousTime.add(r2);
+      if (r3) scheduledPreviousTime.add(r3);
+      if (r4) scheduledPreviousTime.add(r4);
       if (anim) scheduledPreviousTime.add(anim);
     }
   })();
