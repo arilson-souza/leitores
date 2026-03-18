@@ -117,12 +117,12 @@ Crie um bloco de configuração do Nginx:
 sudo nano /etc/nginx/sites-available/escalas-paroquia
 ```
 
-Copie e cole a configuração abaixo (**Atenção**: Troque `seusite.com.br` para o seu próprio domínio. Se não tiver domínio comprado ainda, digite `_` no lugar de `server_name` temporariamente):
+Copie e cole a configuração abaixo (**já adaptada** para o seu subdomínio `icm.arilsonsouza.com.br` e voltada para a sua porta 3000):
 
 ```nginx
 server {
     listen 80;
-    server_name seusite.com.br www.seusite.com.br;
+    server_name icm.arilsonsouza.com.br;
 
     location / {
         proxy_pass http://127.0.0.1:3000;
