@@ -31,7 +31,7 @@ export default async function DashboardPage() {
         
         <div style={{ marginBottom: '2.5rem' }}>
           <h1 style={{ fontSize: '2.4rem', fontWeight: '800', color: 'var(--primary)', margin: '0 0 0.5rem 0', letterSpacing: '-0.02em' }}>
-            Olá, {user.name.split(' ')[0]}
+            Olá, {user?.name?.split(' ')[0] || 'Bem-vindo'}
           </h1>
           <p style={{ fontSize: '1.05rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
             Pronto para fazer a diferença hoje? Aqui está o seu resumo de atividades.

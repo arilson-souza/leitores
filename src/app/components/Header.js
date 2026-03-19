@@ -53,10 +53,10 @@ export default function Header({ user }) {
                 <img src={user.avatar_url} alt="Perfil" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--surface-container-highest)' }} />
               ) : (
                 <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: 'var(--secondary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 'bold' }}>
-                  {user.name.charAt(0).toUpperCase()}
+                  {user?.name?.charAt(0).toUpperCase() || '?'}
                 </div>
               )}
-              <span style={{ fontSize: '0.9rem', marginRight: '10px', color: 'var(--text-main)', fontWeight: '600' }}>{user.name.split(' ')[0]}</span>
+              <span style={{ fontSize: '0.9rem', marginRight: '10px', color: 'var(--text-main)', fontWeight: '600' }}>{user?.name?.split(' ')[0] || 'Usuário'}</span>
               <button onClick={handleLogout} className="btn-logout" title="Sair" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.5rem' }}>
                 <LogOut size={18} />
               </button>
