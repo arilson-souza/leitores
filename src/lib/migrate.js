@@ -28,6 +28,7 @@ export function runMigrations(db) {
       user_id INTEGER NOT NULL,
       mass_date TEXT NOT NULL,
       mass_time TEXT NOT NULL,
+      role TEXT DEFAULT 'AMBOS',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
@@ -56,6 +57,9 @@ export function runMigrations(db) {
       reader_2_id INTEGER,
       reader_3_id INTEGER,
       reader_4_id INTEGER,
+      reader_5_id INTEGER,
+      reader_6_id INTEGER,
+      reader_7_id INTEGER,
       animator_id INTEGER,
       status TEXT DEFAULT 'PLANNED',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -64,6 +68,9 @@ export function runMigrations(db) {
       FOREIGN KEY (reader_2_id) REFERENCES users(id) ON DELETE SET NULL,
       FOREIGN KEY (reader_3_id) REFERENCES users(id) ON DELETE SET NULL,
       FOREIGN KEY (reader_4_id) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (reader_5_id) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (reader_6_id) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (reader_7_id) REFERENCES users(id) ON DELETE SET NULL,
       FOREIGN KEY (animator_id) REFERENCES users(id) ON DELETE SET NULL
     );
     CREATE TABLE IF NOT EXISTS schedule_months (

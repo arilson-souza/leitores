@@ -30,8 +30,9 @@ export async function middleware(request) {
       // we'll protect admin actions in API routes as well
     } catch (error) {
       // Invalid token
-      request.cookies.delete('token');
-      return NextResponse.redirect(new URL('/login', request.url));
+      const response = NextResponse.redirect(new URL('/login', request.url));
+      response.cookies.delete('token');
+      return response;
     }
   }
 

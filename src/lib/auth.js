@@ -50,9 +50,13 @@ export async function clearSession() {
 
 export async function setSession(token) {
   const cookieStore = await cookies();
+  const isProd = process.env.NODE_ENV === 'production';
+  // If we are in production but running via HTTP (e.g. local network),
+  // secure: true will cause browser to reject cookie.
+  // Use a fallback or env variable to control it if needed.
   cookieStore.set('token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProd,
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 24 // 24h

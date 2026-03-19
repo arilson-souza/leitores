@@ -189,6 +189,14 @@ export default function AdminPage() {
             </div>
           </div>
 
+          <div style={{ padding: '0.75rem', backgroundColor: '#f9fafb', border: '1px solid var(--border)', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.8rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
+            <strong style={{ color: 'var(--text-muted)' }}>Legenda das Funções:</strong>
+            <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ backgroundColor: '#2563eb', color: 'white', fontWeight: 'bold', fontSize: '0.7rem', padding: '0.15rem 0.35rem', borderRadius: '4px', marginRight: '6px', display: 'inline-block', minWidth: '24px', textAlign: 'center' }}>L1</span> Leitor 1ª Leitura</div>
+            <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ backgroundColor: '#0d9488', color: 'white', fontWeight: 'bold', fontSize: '0.7rem', padding: '0.15rem 0.35rem', borderRadius: '4px', marginRight: '6px', display: 'inline-block', minWidth: '24px', textAlign: 'center' }}>L2</span> Leitor 2ª Leitura</div>
+            <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ backgroundColor: '#9333ea', color: 'white', fontWeight: 'bold', fontSize: '0.7rem', padding: '0.15rem 0.35rem', borderRadius: '4px', marginRight: '6px', display: 'inline-block', minWidth: '24px', textAlign: 'center' }}>L3 a L7</span> Leitores Extras</div>
+            <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ backgroundColor: '#ea580c', color: 'white', fontWeight: 'bold', fontSize: '0.7rem', padding: '0.15rem 0.35rem', borderRadius: '4px', marginRight: '6px', display: 'inline-block', minWidth: '24px', textAlign: 'center' }}>A</span> Animador</div>
+          </div>
+
           <Alert type="error" message={error} />
           <Alert type="success" message={message} />
 
@@ -203,19 +211,8 @@ export default function AdminPage() {
               {masses.length === 0 ? (
                 <p style={{ color: 'var(--text-muted)' }}>Mês sem missas geradas. Clique em "Gerar Missas" primeiro.</p>
               ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead>
-                      <tr style={{ backgroundColor: 'var(--bg-color)', borderBottom: '2px solid var(--border)' }}>
-                        <th style={{ padding: '0.75rem' }}>Data e Hora</th>
-                        <th style={{ padding: '0.75rem' }}>Leitor 1</th>
-                        <th style={{ padding: '0.75rem' }}>Leitor(es) Extra(s)</th>
-                        <th style={{ padding: '0.75rem' }}>Animador</th>
-                        <th style={{ padding: '0.75rem' }}>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {schedules.map((schedule) => {
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                  {schedules.map((schedule) => {
                         const isWeekend = schedule.day_type === 'SATURDAY' || schedule.day_type === 'SUNDAY' || schedule.day_type === 'SPECIAL';
                         const dateParts = schedule.mass_date.split('-');
                         const displayDate = `${dateParts[2]}/${dateParts[1]} às ${schedule.mass_time}`;
@@ -223,39 +220,56 @@ export default function AdminPage() {
                         const isIncomplete = !schedule.reader_1_name || !schedule.animator_name || (isWeekend && !schedule.reader_2_name);
                         
                         return (
-                          <tr key={schedule.id} style={{ borderBottom: '1px solid var(--border)', backgroundColor: isIncomplete ? 'var(--error-bg)' : 'white' }}>
-                            <td style={{ padding: '0.75rem', fontWeight: 500 }}>{displayDate}</td>
-                            <td style={{ padding: '0.75rem' }}>{schedule.reader_1_name || <span style={{ color: 'var(--error)' }}>Faltando</span>}</td>
-                            <td style={{ padding: '0.75rem' }}>
-                              {!isWeekend && !schedule.reader_2_name ? '-' : 
-                                [schedule.reader_2_name, schedule.reader_3_name, schedule.reader_4_name]
-                                  .filter(Boolean).join(', ') || <span style={{ color: 'var(--error)' }}>Faltando</span>
-                              }
-                            </td>
-                            <td style={{ padding: '0.75rem' }}>{schedule.animator_name || <span style={{ color: 'var(--error)' }}>Faltando</span>}</td>
-                            <td style={{ padding: '0.75rem' }}>
+                          <div key={schedule.id} style={{ 
+                            backgroundColor: isIncomplete ? 'var(--error-bg)' : 'var(--surface-container-lowest)',
+                            borderRadius: '1.5rem',
+                            padding: '1.5rem',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02)',
+                            border: isIncomplete ? '1px solid #fca5a5' : '1px solid var(--border)'
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--surface-container-highest)', paddingBottom: '0.8rem', marginBottom: '1rem' }}>
+                              <h4 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--primary)', fontWeight: '700' }}>{displayDate}</h4>
                               <span style={{ 
                                 fontSize: '0.8rem', 
-                                padding: '0.25rem 0.5rem', 
-                                borderRadius: '1rem',
-                                backgroundColor: schedule.status === 'CONFIRMED' ? 'var(--success-bg)' : 'var(--bg-color)',
+                                padding: '0.3rem 0.8rem', 
+                                borderRadius: '9999px',
+                                backgroundColor: schedule.status === 'CONFIRMED' ? 'var(--success-bg)' : 'var(--surface-container-highest)',
                                 color: schedule.status === 'CONFIRMED' ? 'var(--success)' : 'var(--text-main)',
+                                fontWeight: 'bold'
                               }}>
-                                {schedule.status}
+                                {schedule.status === 'CONFIRMED' ? 'Confirmado' : schedule.status}
                               </span>
-                            </td>
-                          </tr>
+                            </div>
+                            
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Leitor 1</span>
+                                <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{schedule.reader_1_name || <span style={{ color: 'var(--error)' }}>Faltando</span>}</span>
+                              </div>
+                              
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Leitores Extras</span>
+                                <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>
+                                  {!isWeekend && !schedule.reader_2_name ? '-' : 
+                                    [schedule.reader_2_name, schedule.reader_3_name, schedule.reader_4_name, schedule.reader_5_name, schedule.reader_6_name, schedule.reader_7_name]
+                                      .filter(Boolean).join(', ') || <span style={{ color: 'var(--error)' }}>Faltando</span>
+                                  }
+                                </span>
+                              </div>
+
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Animador</span>
+                                <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{schedule.animator_name || <span style={{ color: 'var(--error)' }}>Faltando</span>}</span>
+                              </div>
+                            </div>
+                          </div>
                         );
                       })}
                       {schedules.length === 0 && (
-                        <tr>
-                          <td colSpan="5" style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                            Missas geradas, mas escala ainda não processada. Clique em "Gerar Escala Automática".
-                          </td>
-                        </tr>
+                        <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', backgroundColor: 'var(--surface-container-lowest)', borderRadius: '1.5rem' }}>
+                          Missas geradas, mas escala ainda não processada. Clique em "Gerar Escala Automática".
+                        </div>
                       )}
-                    </tbody>
-                  </table>
                 </div>
               )}
             </div>

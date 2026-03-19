@@ -19,7 +19,7 @@ export async function GET(request) {
   
   try {
     const availabilities = db.prepare(`
-      SELECT mass_date, mass_time FROM availabilities
+      SELECT mass_date, mass_time, role FROM availabilities
       WHERE user_id = ? AND mass_date LIKE ?
     `).all(session.id, `${prefix}%`);
 
@@ -54,12 +54,12 @@ export async function POST(request) {
 
       // Insert new slots
       const insert = db.prepare(`
-        INSERT INTO availabilities (user_id, mass_date, mass_time) 
-        VALUES (?, ?, ?)
+        INSERT INTO availabilities (user_id, mass_date, mass_time, role) 
+        VALUES (?, ?, ?, ?)
       `);
 
       for (const slot of slots) {
-        insert.run(session.id, slot.mass_date, slot.mass_time);
+        insert.run(session.id, slot.mass_date, slot.mass_time, slot.role || 'AMBOS');
       }
     });
 

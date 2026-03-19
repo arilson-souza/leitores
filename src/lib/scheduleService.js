@@ -18,6 +18,11 @@ export function generateMasses(year, month, specialDates = []) {
       const d = new Date(year, month - 1, i);
       const dayOfWeek = d.getDay();
       
+      const hasSpecial = db.prepare("SELECT id FROM masses WHERE mass_date = ? AND day_type = 'SPECIAL'").get(dateStr);
+      if (hasSpecial) {
+        continue;
+      }
+
       const isSpecial = specialDates.includes(dateStr);
       let dayType = 'WEEKDAY';
       let times = [];
@@ -59,14 +64,14 @@ export function generateSchedules(year, month) {
   const masses = db.prepare(`SELECT id, mass_date, mass_time, day_type, required_readers FROM masses WHERE mass_date LIKE ? ORDER BY mass_date, mass_time`).all(`${prefix}%`);
   if (masses.length === 0) throw new Error('Nenhuma missa gerada para este mês.');
 
-  const availabilities = db.prepare(`SELECT user_id, mass_date, mass_time FROM availabilities WHERE mass_date LIKE ?`).all(`${prefix}%`);
+  const availabilities = db.prepare(`SELECT user_id, mass_date, mass_time, role FROM availabilities WHERE mass_date LIKE ?`).all(`${prefix}%`);
   
   // Build a map of availabilities: { "YYYY-MM-DD HH:MM": [user_ids] }
   const availMap = {};
   availabilities.forEach(a => {
     const key = `${a.mass_date} ${a.mass_time}`;
     if (!availMap[key]) availMap[key] = [];
-    availMap[key].push(a.user_id);
+    availMap[key].push({ id: a.user_id, role: a.role });
   });
 
   // Fetch all users to know who can be reader/animator, and their leave status
@@ -75,8 +80,8 @@ export function generateSchedules(year, month) {
   users.forEach(u => userMap[u.id] = u);
 
   const insertSchedule = db.prepare(`
-    INSERT INTO schedules (mass_id, reader_1_id, reader_2_id, reader_3_id, reader_4_id, animator_id, status)
-    VALUES (?, ?, ?, ?, ?, ?, 'PLANNED')
+    INSERT INTO schedules (mass_id, reader_1_id, reader_2_id, reader_3_id, reader_4_id, reader_5_id, reader_6_id, reader_7_id, animator_id, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PLANNED')
   `);
 
   // Clear existing schedules for this month to regenerate
@@ -109,7 +114,8 @@ export function generateSchedules(year, month) {
       const availableUsers = availMap[key] || [];
 
       // Filter users who shouldn't serve (served previous day or previous time, or on leave)
-      const eligibleUsers = availableUsers.filter(uid => {
+      const eligibleUsers = availableUsers.filter(avail => {
+        const uid = avail.id;
         const u = userMap[uid];
         if (!u) return false;
         
@@ -127,17 +133,19 @@ export function generateSchedules(year, month) {
       });
 
       // Sort eligible users by usage count (ascending) to balance
-      eligibleUsers.sort((a, b) => usageCount[a] - usageCount[b]);
+      eligibleUsers.sort((a, b) => usageCount[a.id] - usageCount[b.id]);
 
       let readersNeeded = mass.required_readers || ((mass.day_type === 'WEEKDAY') ? 1 : 2);
       let animatorsNeeded = 1;
 
-      let r1 = null, r2 = null, r3 = null, r4 = null, anim = null;
+      let r1 = null, r2 = null, r3 = null, r4 = null, r5 = null, r6 = null, r7 = null, anim = null;
       let currentlyScheduled = new Set();
 
       // Find Animators first (usually fewer animators than readers)
-      for (const uid of eligibleUsers) {
-        if (userMap[uid].can_be_animator && animatorsNeeded > 0) {
+      for (const avail of eligibleUsers) {
+        const uid = avail.id;
+        const mappedRole = avail.role || 'AMBOS';
+        if (userMap[uid].can_be_animator && (mappedRole === 'ANIMADOR' || mappedRole === 'AMBOS') && animatorsNeeded > 0) {
           anim = uid;
           animatorsNeeded--;
           currentlyScheduled.add(uid);
@@ -147,18 +155,19 @@ export function generateSchedules(year, month) {
       }
 
       // Find Readers
-      for (const uid of eligibleUsers) {
+      for (const avail of eligibleUsers) {
+        const uid = avail.id;
+        const mappedRole = avail.role || 'AMBOS';
         if (currentlyScheduled.has(uid)) continue;
-        if (userMap[uid].can_be_reader) {
-          if (!r1) {
-            r1 = uid;
-          } else if (!r2) {
-            r2 = uid;
-          } else if (!r3) {
-            r3 = uid;
-          } else if (!r4) {
-            r4 = uid;
-          }
+        if (userMap[uid].can_be_reader && (mappedRole === 'LEITOR' || mappedRole === 'AMBOS')) {
+          if (!r1) r1 = uid;
+          else if (!r2) r2 = uid;
+          else if (!r3) r3 = uid;
+          else if (!r4) r4 = uid;
+          else if (!r5) r5 = uid;
+          else if (!r6) r6 = uid;
+          else if (!r7) r7 = uid;
+          
           readersNeeded--;
           currentlyScheduled.add(uid);
           usageCount[uid]++;
@@ -167,7 +176,7 @@ export function generateSchedules(year, month) {
       }
 
       // Record schedule
-      insertSchedule.run(mass.id, r1, r2, r3, r4, anim);
+      insertSchedule.run(mass.id, r1, r2, r3, r4, r5, r6, r7, anim);
       generatedCount++;
 
       // Update previous time sets
@@ -176,6 +185,9 @@ export function generateSchedules(year, month) {
       if (r2) scheduledPreviousTime.add(r2);
       if (r3) scheduledPreviousTime.add(r3);
       if (r4) scheduledPreviousTime.add(r4);
+      if (r5) scheduledPreviousTime.add(r5);
+      if (r6) scheduledPreviousTime.add(r6);
+      if (r7) scheduledPreviousTime.add(r7);
       if (anim) scheduledPreviousTime.add(anim);
     }
   })();

@@ -1,5 +1,5 @@
 import { getDb } from '@/lib/db';
-import { verifyPassword, createToken, setSession } from '@/lib/auth';
+import { verifyPassword, createToken } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
@@ -26,11 +26,24 @@ export async function POST(request) {
     // Create session
     const { password_hash, ...userWithoutPassword } = user;
     const token = await createToken(userWithoutPassword);
-    await setSession(token);
+    
+    const response = NextResponse.json({ user: userWithoutPassword }, { status: 200 });
+    
+    // Set the cookie directly on the response to ensure it's sent to the client
+    response.cookies.set('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production' && process.env.HTTPS !== 'false',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 // 24h
+    });
 
-    return NextResponse.json({ user: userWithoutPassword }, { status: 200 });
+    return response;
   } catch (error) {
     console.error('Login error:', error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Erro interno do servidor', details: error.message }, 
+      { status: 500 }
+    );
   }
 }

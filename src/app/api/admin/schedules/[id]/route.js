@@ -13,7 +13,7 @@ export async function PUT(request, props) {
   try {
     const { field, userId } = await request.json(); // field: 'reader_1_id' | 'reader_2_id' | 'animator_id'
 
-    const allowedFields = ['reader_1_id', 'reader_2_id', 'reader_3_id', 'reader_4_id', 'animator_id'];
+    const allowedFields = ['reader_1_id', 'reader_2_id', 'reader_3_id', 'reader_4_id', 'reader_5_id', 'reader_6_id', 'reader_7_id', 'animator_id'];
     if (!allowedFields.includes(field)) {
       return NextResponse.json({ error: 'Campo inválido' }, { status: 400 });
     }

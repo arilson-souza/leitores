@@ -5,6 +5,7 @@ import Header from '@/app/components/Header';
 import Alert from '@/app/components/Alert';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Trash2, Save, Plus } from 'lucide-react';
 
 export default function MissasEspeciaisPage() {
   const router = useRouter();
@@ -107,14 +108,15 @@ export default function MissasEspeciaisPage() {
       {user && <Header user={user} />}
       <main className="main-content">
         <div className="card large" style={{ maxWidth: '1000px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-            <h2 className="card-title" style={{ margin: 0 }}>Gerenciar Missas Especiais</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <h2 className="card-title" style={{ margin: 0, fontSize: '2rem' }}>Missas Especiais</h2>
             <div style={{ display: 'flex', gap: '1rem' }}>
-              <Link href="/admin" className="btn btn-secondary" style={{ width: 'auto' }}>
+              <Link href="/admin" className="btn-secondary" style={{ width: 'auto', padding: '0.8rem 1.5rem', borderRadius: '9999px', textDecoration: 'none', fontWeight: '600' }}>
                 Voltar à Coordenação
               </Link>
-              <button onClick={() => setShowForm(true)} className="btn" style={{ width: 'auto' }}>
-                + Nova Missa Especial
+              <button onClick={() => setShowForm(true)} className="btn" style={{ width: 'auto', padding: '0.8rem 1.5rem' }}>
+                <Plus size={20} />
+                Nova Missa Especial
               </button>
             </div>
           </div>
@@ -126,7 +128,7 @@ export default function MissasEspeciaisPage() {
             <div style={{ padding: '1.5rem', border: '1px solid var(--border)', borderRadius: '8px', marginBottom: '2rem', backgroundColor: '#f9fafb' }}>
               <h3 style={{ marginBottom: '1rem', color: 'var(--primary)' }}>Cadastrar Missa Solene/Especial</h3>
               <p style={{ marginBottom: '1rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                Missas criadas aqui não serão apagadas nem sobrescritas pela geração mensal automática.
+                Ao criar uma Missa Solene, todas as missas regulares dessa data serão removidas. 
                 Os membros conseguirão ver essas missas na página de Disponibilidade caso selecionem o respectivo mês.
               </p>
               <form onSubmit={handleSubmit}>
@@ -144,14 +146,17 @@ export default function MissasEspeciaisPage() {
                     <input type="time" name="mass_time" className="form-input" value={formData.mass_time} onChange={handleInputChange} required />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Qtd. de Leitores (1 a 4)</label>
-                    <input type="number" name="required_readers" className="form-input" min="1" max="4" value={formData.required_readers} onChange={handleInputChange} required />
+                    <label className="form-label">Qtd. de Leitores (1 a 7)</label>
+                    <input type="number" name="required_readers" className="form-input" min="1" max="7" value={formData.required_readers} onChange={handleInputChange} required />
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <button type="submit" className="btn" style={{ flex: 1 }}>Agendar Missa</button>
-                  <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowForm(false)}>Cancelar</button>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                  <button type="submit" className="btn" style={{ flex: 1 }}>
+                    <Save size={20} />
+                    Agendar Missa
+                  </button>
+                  <button type="button" className="btn-secondary" style={{ flex: 1, borderRadius: '9999px', border: 'none', fontWeight: '600', cursor: 'pointer' }} onClick={() => setShowForm(false)}>Cancelar</button>
                 </div>
               </form>
             </div>
@@ -160,56 +165,55 @@ export default function MissasEspeciaisPage() {
           {loading && !massesList.length ? (
             <p style={{ textAlign: 'center' }}>Carregando...</p>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ backgroundColor: 'var(--bg-color)', borderBottom: '2px solid var(--border)' }}>
-                    <th style={{ padding: '0.75rem' }}>Celebração</th>
-                    <th style={{ padding: '0.75rem' }}>Data</th>
-                    <th style={{ padding: '0.75rem' }}>Horário</th>
-                    <th style={{ padding: '0.75rem', textAlign: 'center' }}>Vagas p/ Leitores</th>
-                    <th style={{ padding: '0.75rem', textAlign: 'center' }}>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                   {massesList.map((m) => {
                     const [year, month, day] = m.mass_date.split('-');
                     return (
-                      <tr key={m.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                        <td style={{ padding: '0.75rem', fontWeight: 500 }}>{m.name || 'Missa Especial'}</td>
-                        <td style={{ padding: '0.75rem' }}>{`${day}/${month}/${year}`}</td>
-                        <td style={{ padding: '0.75rem' }}>{m.mass_time}</td>
-                        <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                      <div key={m.id} style={{ 
+                        backgroundColor: 'var(--surface-container-lowest)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '1.5rem',
+                        padding: '1.5rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '1rem',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02)'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <div>
+                            <h4 style={{ margin: 0, fontSize: '1.3rem', color: 'var(--primary)', fontWeight: '700' }}>{m.name || 'Missa Especial'}</h4>
+                            <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>{`${day}/${month}/${year}`} às {m.mass_time}</span>
+                          </div>
                           <span style={{ 
-                            fontSize: '0.85rem', padding: '0.2rem 0.6rem', borderRadius: '4px',
-                            backgroundColor: '#e0e7ff', color: '#3730a3', fontWeight: 'bold'
+                            fontSize: '0.85rem', padding: '0.4rem 0.8rem', borderRadius: '8px',
+                            backgroundColor: 'var(--secondary-container)', color: '#007166', fontWeight: 'bold'
                           }}>
                             {m.required_readers} Leitores
                           </span>
-                        </td>
-                        <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                        </div>
+
+                        <div style={{ borderTop: '1px solid var(--border)', marginTop: '0.5rem', paddingTop: '1.25rem' }}>
                           <button 
                             onClick={() => handleDelete(m.id, m.name)}
                             style={{ 
-                              background: 'none', border: '1px solid var(--error)', color: 'var(--error)', 
-                              padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer'
+                              width: '100%', background: '#fee2e2', border: 'none', color: '#b91c1c', 
+                              padding: '0.8rem', borderRadius: '9999px', cursor: 'pointer', fontWeight: '600',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'background 0.2s'
                             }}
+                            onMouseOver={e => e.currentTarget.style.background = '#fca5a5'}
+                            onMouseOut={e => e.currentTarget.style.background = '#fee2e2'}
                           >
-                           Pular / Excluir
+                            <Trash2 size={18} /> Excluir Celebração
                           </button>
-                        </td>
-                      </tr>
+                        </div>
+                      </div>
                     );
                   })}
                   {massesList.length === 0 && (
-                    <tr>
-                      <td colSpan="5" style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                        Nenhuma missa especial / solene cadastrada.
-                      </td>
-                    </tr>
+                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', backgroundColor: 'var(--surface-container-lowest)', borderRadius: '1.5rem' }}>
+                        Nenhuma missa especial ou solene cadastrada.
+                    </div>
                   )}
-                </tbody>
-              </table>
             </div>
           )}
         </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Header from '@/app/components/Header';
 import Alert from '@/app/components/Alert';
 import { useRouter } from 'next/navigation';
+import { Pencil, Trash2, Save, Plus } from 'lucide-react';
 
 export default function IntegrantesPage() {
   const router = useRouter();
@@ -222,10 +223,11 @@ export default function IntegrantesPage() {
       {user && <Header user={user} />}
       <main className="main-content">
         <div className="card large" style={{ maxWidth: '1000px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-            <h2 className="card-title" style={{ margin: 0 }}>Gerenciar Membros</h2>
-            <button onClick={openAddForm} className="btn" style={{ width: 'auto' }}>
-              + Adicionar Membro
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <h2 className="card-title" style={{ margin: 0, fontSize: '2rem' }}>Gerenciar Membros</h2>
+            <button onClick={openAddForm} className="btn" style={{ width: 'auto', padding: '0.8rem 1.5rem' }}>
+              <Plus size={20} />
+              Novo Membro
             </button>
           </div>
 
@@ -251,8 +253,8 @@ export default function IntegrantesPage() {
           <Alert type="success" message={message} />
 
           {showForm && (
-            <div style={{ padding: '1.5rem', border: '1px solid var(--border)', borderRadius: '8px', marginBottom: '2rem', backgroundColor: '#f9fafb' }}>
-              <h3 style={{ marginBottom: '1rem', color: 'var(--primary)' }}>{isEditing ? 'Editar Membro' : 'Novo Membro'}</h3>
+            <div className="bottom-sheet" style={{ padding: '2rem', border: '1px solid var(--border)', borderRadius: '1.5rem', marginBottom: '2rem', backgroundColor: 'var(--surface-container-lowest)', boxShadow: '0 20px 40px rgba(0, 32, 70, 0.06)' }}>
+              <h3 style={{ marginBottom: '1.5rem', color: 'var(--primary)', fontSize: '1.5rem', fontWeight: '700' }}>{isEditing ? 'Editar Membro' : 'Novo Membro'}</h3>
               <form onSubmit={handleSubmit}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
                   <div className="form-group">
@@ -330,9 +332,12 @@ export default function IntegrantesPage() {
                   </label>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <button type="submit" className="btn" style={{ flex: 1 }}>{isEditing ? 'Salvar Alterações' : 'Cadastrar'}</button>
-                  <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowForm(false)}>Cancelar</button>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                  <button type="submit" className="btn" style={{ flex: 1 }}>
+                    <Save size={20} />
+                    {isEditing ? 'Salvar Alterações' : 'Cadastrar Membro'}
+                  </button>
+                  <button type="button" className="btn-secondary" style={{ flex: 1, borderRadius: '9999px', border: 'none', fontWeight: '600', cursor: 'pointer' }} onClick={() => setShowForm(false)}>Cancelar</button>
                 </div>
               </form>
             </div>
@@ -342,115 +347,129 @@ export default function IntegrantesPage() {
             <p style={{ textAlign: 'center' }}>Carregando...</p>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ backgroundColor: 'var(--bg-color)', borderBottom: '2px solid var(--border)' }}>
-                    <th style={{ padding: '0.75rem' }}>Nome</th>
-                    <th style={{ padding: '0.75rem' }}>E-mail</th>
-                    <th style={{ padding: '0.75rem' }}>Funções</th>
-                    <th style={{ padding: '0.75rem' }}>Status</th>
-                    <th style={{ padding: '0.75rem' }}>Acesso</th>
-                    <th style={{ padding: '0.75rem', textAlign: 'center' }}>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                   {usersList.map((u) => {
                     let funcs = [];
                     if (u.can_be_reader) funcs.push('Leitor');
                     if (u.can_be_animator) funcs.push('Animador');
 
                     return (
-                      <tr key={u.id} style={{ 
-                        borderBottom: '1px solid var(--border)',
-                        backgroundColor: u.status === 'LICENCIADO' ? '#fff7ed' : 'transparent',
-                        borderLeft: u.status === 'LICENCIADO' ? '4px solid #ea580c' : 'none'
+                      <div key={u.id} style={{ 
+                        backgroundColor: 'var(--surface-container-lowest)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '1.5rem',
+                        padding: '1.5rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '1rem',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02)'
                       }}>
-                        <td style={{ padding: '0.75rem', fontWeight: 500 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            {u.avatar_url ? (
-                              <img src={u.avatar_url} alt={u.name} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
-                            ) : (
-                              <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--secondary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                                {u.name.charAt(0).toUpperCase()}
-                              </div>
-                            )}
-                            {u.name}
-                          </div>
-                        </td>
-                        <td style={{ padding: '0.75rem' }}>{u.email}</td>
-                        <td style={{ padding: '0.75rem' }}>
-                          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block' }}>
-                            {funcs.join(', ') || 'Nenhuma'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '0.75rem' }}>
-                          <select 
-                            value={u.status || 'ATIVO'} 
-                            onChange={(e) => handleQuickStatus(u, e.target.value)}
-                            style={{ 
-                              padding: '0.3rem', 
-                              borderRadius: '4px', 
-                              border: '1px solid var(--border)', 
-                              backgroundColor: u.status === 'LICENCIADO' ? '#fefce8' : '#f0fdf4',
-                              color: u.status === 'LICENCIADO' ? '#854d0e' : '#166534',
-                              fontWeight: 'bold',
-                              fontSize: '0.85rem',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            <option value="ATIVO">ATIVO</option>
-                            <option value="LICENCIADO">LICENCIADO</option>
-                          </select>
-                          {u.status === 'LICENCIADO' && (
-                            <span style={{ fontSize: '0.8rem', color: '#c2410c', display: 'block', marginTop: '6px' }}>
-                              De: <b>{u.leave_start ? u.leave_start.split('-').reverse().join('/') : '-'}</b><br/>
-                              Até: <b>{u.leave_end ? u.leave_end.split('-').reverse().join('/') : 'Indeterminado'}</b>
-                            </span>
+                        {u.status === 'LICENCIADO' && (
+                          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '6px', backgroundColor: '#ea580c' }} />
+                        )}
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          {u.avatar_url ? (
+                            <img src={u.avatar_url} alt={u.name} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} />
+                          ) : (
+                            <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--secondary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                              {u.name.charAt(0).toUpperCase()}
+                            </div>
                           )}
-                        </td>
-                        <td style={{ padding: '0.75rem' }}>
+                          <div style={{ flex: 1 }}>
+                            <h4 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--primary)', fontWeight: '700' }}>{u.name}</h4>
+                            <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{u.email}</span>
+                          </div>
+                          
                           <span style={{ 
-                            fontSize: '0.8rem', padding: '0.2rem 0.5rem', borderRadius: '4px',
-                            backgroundColor: u.role === 'ADMIN' ? '#dbeafe' : '#f3f4f6',
-                            color: u.role === 'ADMIN' ? '#1e40af' : '#4b5563'
+                            fontSize: '0.8rem', padding: '0.3rem 0.8rem', borderRadius: '9999px', fontWeight: 'bold',
+                            backgroundColor: u.role === 'ADMIN' ? '#dbeafe' : 'var(--surface-container-highest)',
+                            color: u.role === 'ADMIN' ? '#1e40af' : 'var(--text-main)'
                           }}>
-                            {u.role === 'ADMIN' ? 'Coordenador' : 'Membro'}
+                            {u.role === 'ADMIN' ? 'Coordenador' : 'Voluntário'}
                           </span>
-                        </td>
-                        <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.3rem', fontWeight: 'bold' }}>Funções</span>
+                            <span style={{ fontSize: '0.95rem', color: 'var(--text-main)', fontWeight: '600' }}>
+                              {funcs.length > 0 ? (
+                                <span style={{ padding: '0.3rem 0.6rem', backgroundColor: 'var(--secondary-container)', color: '#007166', borderRadius: '8px', fontSize: '0.85rem' }}>
+                                  {funcs.join(' & ')}
+                                </span>
+                              ) : 'Nenhuma'}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.3rem', fontWeight: 'bold' }}>Status</span>
+                            <select 
+                              value={u.status || 'ATIVO'} 
+                              onChange={(e) => handleQuickStatus(u, e.target.value)}
+                              style={{ 
+                                padding: '0.4rem', 
+                                borderRadius: '8px', 
+                                border: '1px solid transparent', 
+                                backgroundColor: u.status === 'LICENCIADO' ? '#fefce8' : '#f0fdf4',
+                                color: u.status === 'LICENCIADO' ? '#854d0e' : '#166534',
+                                fontWeight: 'bold',
+                                fontSize: '0.9rem',
+                                cursor: 'pointer',
+                                width: 'fit-content'
+                              }}
+                            >
+                              <option value="ATIVO">Ativo</option>
+                              <option value="LICENCIADO">Licenciado</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {u.status === 'LICENCIADO' && (
+                          <div style={{ backgroundColor: '#fff7ed', padding: '0.8rem', borderRadius: '8px', borderLeft: '3px solid #ea580c', fontSize: '0.9rem', color: '#9a3412', marginTop: '0.5rem' }}>
+                            Licenciado de <b>{u.leave_start ? u.leave_start.split('-').reverse().join('/') : '-'}</b> até <b>{u.leave_end ? u.leave_end.split('-').reverse().join('/') : 'Indeterminado'}</b>
+                            <br/><span style={{ fontSize: '0.8rem', opacity: 0.8 }}>Motivo: {u.leave_reason}</span>
+                          </div>
+                        )}
+
+                        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
                           <button 
                             onClick={() => openEditForm(u)} 
                             style={{ 
-                              background: 'none', border: '1px solid var(--secondary)', color: 'var(--secondary)', 
-                              padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', marginRight: '0.5rem' 
+                              flex: 1, background: 'var(--surface-container-highest)', border: 'none', color: 'var(--primary)', 
+                              padding: '0.8rem', borderRadius: '9999px', cursor: 'pointer', fontWeight: '600',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'background 0.2s'
                             }}
+                            onMouseOver={e => e.currentTarget.style.background = '#d4d5d7'}
+                            onMouseOut={e => e.currentTarget.style.background = 'var(--surface-container-highest)'}
                           >
-                            Editar
+                            <Pencil size={18} /> Editar
                           </button>
                           <button 
                             onClick={() => handleDelete(u.id, u.name)}
                             disabled={user?.id === u.id}
                             style={{ 
-                              background: 'none', border: '1px solid var(--error)', color: 'var(--error)', 
-                              padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: user?.id === u.id ? 'not-allowed' : 'pointer',
-                              opacity: user?.id === u.id ? 0.5 : 1
+                              flex: 1, background: '#fee2e2', border: 'none', color: '#b91c1c', 
+                              padding: '0.8rem', borderRadius: '9999px', cursor: user?.id === u.id ? 'not-allowed' : 'pointer', fontWeight: '600', opacity: user?.id === u.id ? 0.5 : 1,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'background 0.2s'
                             }}
+                            onMouseOver={e => user?.id !== u.id && (e.currentTarget.style.background = '#fca5a5')}
+                            onMouseOut={e => user?.id !== u.id && (e.currentTarget.style.background = '#fee2e2')}
                           >
-                           Excluir
+                            <Trash2 size={18} /> Excluir
                           </button>
-                        </td>
-                      </tr>
+                        </div>
+                      </div>
                     );
                   })}
                   {usersList.length === 0 && (
-                    <tr>
-                      <td colSpan="6" style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                        Nenhum membro cadastrado além do coordenador.
-                      </td>
-                    </tr>
+                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', backgroundColor: 'var(--surface-container-lowest)', borderRadius: '1.5rem' }}>
+                      Nenhum membro cadastrado além do coordenador.
+                    </div>
                   )}
-                </tbody>
-              </table>
+            </div>
             </div>
           )}
         </div>

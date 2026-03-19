@@ -29,11 +29,14 @@ export async function POST(request) {
 
     const db = getDb();
     
-    // Check if a mass already exists at the same date and time
-    const existing = db.prepare('SELECT id FROM masses WHERE mass_date = ? AND mass_time = ?').get(mass_date, mass_time);
+    // Check if a SPECIAL mass already exists at the same date and time
+    const existing = db.prepare("SELECT id FROM masses WHERE mass_date = ? AND mass_time = ? AND day_type = 'SPECIAL'").get(mass_date, mass_time);
     if (existing) {
-      return NextResponse.json({ error: 'Já existe uma missa cadastrada nesta data e hora' }, { status: 400 });
+      return NextResponse.json({ error: 'Já existe uma missa solene cadastrada nesta data e hora' }, { status: 400 });
     }
+
+    // Remova qualquer missa regular que caia no mesmo dia de uma missa solene
+    db.prepare("DELETE FROM masses WHERE mass_date = ? AND day_type != 'SPECIAL'").run(mass_date);
 
     const result = db.prepare(`
       INSERT INTO masses (mass_date, mass_time, day_type, name, required_readers)

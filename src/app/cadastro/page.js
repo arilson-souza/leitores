@@ -56,7 +56,9 @@ export default function RegisterPage() {
   return (
     <main className="main-content">
       <div className="card">
-        <h2 className="card-title">Paróquia Imaculado Coração de Maria</h2>
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <img src="/logo.png" alt="Paróquia Imaculado Coração de Maria" style={{ height: '100px', objectFit: 'contain' }} />
+        </div>
         <h3 className="card-title" style={{ fontSize: '1.2rem', marginBottom: '2rem' }}>Criar Conta</h3>
         
         <Alert type="error" message={error} />
